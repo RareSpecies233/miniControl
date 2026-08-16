@@ -332,17 +332,28 @@ int main(int argc, char* argv[]) {
         int screen_w = GetSystemMetrics(SM_CXSCREEN);
         int screen_h = GetSystemMetrics(SM_CYSCREEN);
 
-        if (type == "mouse_move") {
-            int x = json_int(req.body, "x");
-            int y = json_int(req.body, "y");
+        auto scale_coords = [&](int& x, int& y) {
             int tw = g_target_width.load();
             int th = g_target_height.load();
             if (tw > 0 && th > 0) {
                 x = x * screen_w / tw;
                 y = y * screen_h / th;
             }
+        };
+
+        if (type == "mouse_move") {
+            int x = json_int(req.body, "x");
+            int y = json_int(req.body, "y");
+            scale_coords(x, y);
             simulate_mouse_move(x, y);
         } else if (type == "mouse_button") {
+            // Move cursor to position before clicking
+            int x = json_int(req.body, "x", -1);
+            int y = json_int(req.body, "y", -1);
+            if (x >= 0 && y >= 0) {
+                scale_coords(x, y);
+                simulate_mouse_move(x, y);
+            }
             simulate_mouse_button(json_get(req.body, "button"), json_bool(req.body, "pressed"));
         } else if (type == "mouse_scroll") {
             simulate_mouse_scroll(json_int(req.body, "dx"), json_int(req.body, "dy"));
