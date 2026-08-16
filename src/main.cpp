@@ -223,6 +223,9 @@ static bool json_bool(const std::string& j, const std::string& key, bool def = f
 
 // ============ Main ============
 int main(int argc, char* argv[]) {
+    // DPI awareness - must be called before any GetSystemMetrics/SetCursorPos
+    SetProcessDPIAware();
+
     uint16_t port = 8080;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
@@ -341,11 +344,11 @@ int main(int argc, char* argv[]) {
     });
 
     std::cout << "=========================================\n";
-    std::cout << "  MiniRemote - 远程桌面\n";
+    std::cout << "  MiniRemote - LAN Remote Desktop\n";
     std::cout << "  http://" << local_ip << ":" << port << "\n";
     std::cout << "=========================================\n";
-    std::cout << "在控制端浏览器输入上面的地址即可控制\n";
-    std::cout << "按 Ctrl+C 停止服务\n";
+    std::cout << "Open the above URL in a browser to control\n";
+    std::cout << "Press Ctrl+C to stop\n";
 
     svr.listen("0.0.0.0", port);
 
