@@ -222,7 +222,48 @@ static bool json_bool(const std::string& j, const std::string& key, bool def = f
 }
 
 // ============ Main ============
+// ============ Admin Elevation ============
+static bool is_running_as_admin() {
+    BOOL is_admin = FALSE;
+    SID_IDENTIFIER_AUTHORITY nt_authority = SECURITY_NT_AUTHORITY;
+    PSID admin_group = nullptr;
+    if (AllocateAndInitializeSid(&nt_authority, 2, SECURITY_BUILTIN_DOMAIN_RID,
+            DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &admin_group)) {
+        CheckTokenMembership(nullptr, admin_group, &is_admin);
+        FreeSid(admin_group);
+    }
+    return is_admin;
+}
+
+static void elevate_if_needed(int argc, char* argv[]) {
+    if (is_running_as_admin()) return;
+    // Re-launch with runas verb
+    std::string exe_path;
+    char buf[MAX_PATH]{};
+    if (GetModuleFileNameA(nullptr, buf, MAX_PATH)) exe_path = buf;
+    
+    std::string params;
+    for (int i = 1; i < argc; i++) {
+        if (!params.empty()) params += " ";
+        params += "\"";
+        params += argv[i];
+        params += "\"";
+    }
+    
+    HINSTANCE result = ShellExecuteA(nullptr, "runas", exe_path.c_str(),
+                                      params.empty() ? nullptr : params.c_str(),
+                                      nullptr, SW_SHOW);
+    // If elevation succeeded or was cancelled by user, exit current instance
+    if (reinterpret_cast<intptr_t>(result) > 32) {
+        ExitProcess(0);
+    }
+    // If elevation failed (e.g. user cancelled), continue without admin
+    std::cout << "[WARNING] Running without admin - some windows (Task Manager, etc.) may not be controllable\n";
+}
+
 int main(int argc, char* argv[]) {
+    elevate_if_needed(argc, argv);
+
     // DPI awareness - must be called before any GetSystemMetrics/SetCursorPos
     SetProcessDPIAware();
 

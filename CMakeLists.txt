@@ -31,5 +31,5 @@ target_compile_definitions(MiniRemote PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(MiniRemote PRIVATE ws2_32 winmm gdi32 user32 userenv)
+    target_link_libraries(MiniRemote PRIVATE ws2_32 winmm gdi32 user32 userenv shell32)
 endif()
